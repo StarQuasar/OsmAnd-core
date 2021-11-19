@@ -1,0 +1,29 @@
+*** upstream.original/include/core/SkFontMgr.h	2021-11-15 02:56:40.242601700 +0200
+--- upstream.patched/include/core/SkFontMgr.h	2021-11-15 10:39:14.940810000 +0200
+***************
+*** 123,128 ****
+--- 123,129 ----
+  
+      /** Return the default fontmgr. */
+      static sk_sp<SkFontMgr> RefDefault();
++     static SkFontMgr* RefDefaultRaw();
+  
+  protected:
+      virtual int onCountFamilies() const = 0;
+diff -cr upstream.original/src/core/SkFontMgr.cpp upstream.patched/src/core/SkFontMgr.cpp
+*** upstream.original/src/core/SkFontMgr.cpp	2021-11-15 02:56:41.457253400 +0200
+--- upstream.patched/src/core/SkFontMgr.cpp	2021-11-15 10:39:27.877819900 +0200
+***************
+*** 175,180 ****
+--- 175,184 ----
+      return singleton;
+  }
+  
++ /*static*/
++ SkFontMgr* SkFontMgr::RefDefaultRaw() {
++     return RefDefault().get();
++ }
+  /**
+  * Width has the greatest priority.
+  * If the value of pattern.width is 5 (normal) or less,
+

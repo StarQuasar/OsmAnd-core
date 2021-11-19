@@ -6,7 +6,6 @@
 
 #include "ignore_warnings_on_external_includes.h"
 #include <SkBitmap.h>
-#include <SkImageDecoder.h>
 #include "restore_internal_warnings.h"
 
 #include "MapRenderer.h"
@@ -1177,7 +1176,7 @@ bool OsmAnd::MapRendererResourcesManager::checkForUpdatesAndApply(const MapState
                 {
                     const auto provider = std::static_pointer_cast<IMapKeyedDataProvider>(provider_);
 
-                    if (keyedResourcesCollection->getKeys().toSet() != provider->getProvidedDataKeys().toSet() && mapState.zoomLevel >=  provider->getMinZoom() && mapState.zoomLevel <= provider->getMaxZoom())
+                    if (keyedResourcesCollection->getKeys().toSet() != provider->getProvidedDataKeys().toSet() && provider->getMinZoom() >= mapState.zoomLevel && provider->getMaxZoom() <= mapState.zoomLevel)
                         updatesPresent = true;
                 }
             }

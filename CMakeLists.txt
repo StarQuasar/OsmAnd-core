@@ -1,6 +1,13 @@
+cmake_minimum_required(VERSION 3.21.2 FATAL_ERROR)
+
 project(OsmAndCore)
 
 # Bump this number each time a new source file is committed to repository, source file removed from repository or renamed: 156
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "-std=c++14")
+
 
 set(target_specific_sources "")
 set(target_specific_public_definitions "")

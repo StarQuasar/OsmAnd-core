@@ -11,7 +11,8 @@
 
 #include "ignore_warnings_on_external_includes.h"
 #include <SkStream.h>
-#include <SkImageDecoder.h>
+//#include <SkImageDecoder.h>
+#include <SkBitmap.h>
 #include "restore_internal_warnings.h"
 
 #include <OsmAndCore/SkiaUtilities.h>
@@ -36,7 +37,8 @@ OsmAnd::OnlineRasterMapLayerProvider_P::~OnlineRasterMapLayerProvider_P()
 std::shared_ptr<const SkBitmap> OsmAnd::OnlineRasterMapLayerProvider_P::decodeTileBitmap(const QFileInfo& fileInfo)
 {
     const std::shared_ptr<SkBitmap> bitmap(new SkBitmap());
-    SkFILEStream fileStream(qPrintable(fileInfo.absoluteFilePath()));
+    // MUST be double-check
+    /*SkFILEStream fileStream(qPrintable(fileInfo.absoluteFilePath()));
     if (!SkImageDecoder::DecodeStream(
             &fileStream,
             bitmap.get(),
@@ -52,7 +54,7 @@ std::shared_ptr<const SkBitmap> OsmAnd::OnlineRasterMapLayerProvider_P::decodeTi
             tileFile.remove();
 
         return nullptr;
-    }
+    }*/
     return bitmap;
 }
 
@@ -235,8 +237,11 @@ bool OsmAnd::OnlineRasterMapLayerProvider_P::obtainData(
     unlockTile(tileId, zoom);
 
     // Decode in-memory
+    // TODO: dubious decision, I will definitely discuss it with @Ivan
+    if (true)
+        return false;
     std::shared_ptr<SkBitmap> bitmap(new SkBitmap());
-    if (!SkImageDecoder::DecodeMemory(
+    /*if (!SkImageDecoder::DecodeMemory(
             downloadResult.constData(), downloadResult.size(),
             bitmap.get(),
             SkColorType::kUnknown_SkColorType,
@@ -247,7 +252,7 @@ bool OsmAnd::OnlineRasterMapLayerProvider_P::obtainData(
             qPrintable(tileUrl));
 
         return false;
-    }
+    }*/
 
     assert(bitmap->width() == bitmap->height());
 

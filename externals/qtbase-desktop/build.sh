@@ -73,7 +73,7 @@ if [[ "$targetOS" == "linux" ]]; then
 		-release -opensource -confirm-license -c++std c++11 -no-accessibility -sql-sqlite -qt-sqlite
 		-system-zlib -no-gif -no-libpng -no-libjpeg -no-openssl -qt-pcre
 		-nomake tests -nomake examples -nomake tools -no-gui -no-widgets -no-cups -no-iconv -no-icu -no-dbus
-		-no-xcb -no-eglfs -no-directfb -no-linuxfb -no-kms -no-opengl -no-glib
+		-no-xcb -no-eglfs -no-directfb -no-linuxfb -no-kms -no-opengl -no-glib -DQT_NO_FOREACH
 		-v
 	" | tr '\n' ' ')
 
