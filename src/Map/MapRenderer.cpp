@@ -814,29 +814,31 @@ bool OsmAnd::MapRenderer::adjustBitmapToConfiguration(
     // If we have limit of 16bits per pixel in bitmaps, convert to ARGB(4444) or RGB(565)
     if (force16bit)
     {
-        SkBitmap convertedBitmap(*input);
+        auto convertedBitmap = new SkBitmap(*input);
 
         SkColorType colorType = convertedAlphaChannelPresence == AlphaChannelPresence::Present
                                 ? SkColorType::kARGB_4444_SkColorType
                                 : SkColorType::kRGB_565_SkColorType;
-        convertedBitmap.setInfo(SkImageInfo::Make(input->info().dimensions(), colorType, input->info().alphaType()));
-
-        output.reset(&convertedBitmap);
+        convertedBitmap->allocPixels(SkImageInfo::Make(input->info().dimensions(), colorType, input->info().alphaType()));
+        input->readPixels(convertedBitmap->pixmap());
+        output.reset(convertedBitmap);
         return true;
     }
 
     // If we have any other unsupported format, convert to proper 16bit or 32bit
     if (unsupportedFormat)
     {
-        SkBitmap convertedBitmap(*input);
+        auto convertedBitmap = new SkBitmap(*input);
+
         SkColorType colorType = currentConfiguration->limitTextureColorDepthBy16bits
                                 ? (convertedAlphaChannelPresence == AlphaChannelPresence::Present
                                     ? SkColorType::kARGB_4444_SkColorType
                                     : SkColorType::kRGB_565_SkColorType)
                                 : SkColorType::kRGBA_8888_SkColorType;
-        convertedBitmap.setInfo(SkImageInfo::Make(input->info().dimensions(), colorType, input->info().alphaType()));
+        convertedBitmap->allocPixels(SkImageInfo::Make(input->info().dimensions(), colorType, input->info().alphaType()));
+        input->readPixels(convertedBitmap->pixmap());
 
-        output.reset(&convertedBitmap);
+        output.reset(convertedBitmap);
         return true;
     }
 
