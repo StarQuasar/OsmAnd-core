@@ -34,7 +34,7 @@ namespace OsmAnd
 
     private:
         SkPaint _defaultPaint;
-        SkFont _defaultSkFontText;
+        SkFont _defaultFont;
 
         struct TextPaint
         {
@@ -46,7 +46,7 @@ namespace OsmAnd
 
             QStringRef text;
             SkPaint paint;
-            SkFont skFontText;
+            SkFont font;
             SkScalar height;
             SkScalar width;
             SkRect bounds;
@@ -89,6 +89,7 @@ namespace OsmAnd
         void measureText(QVector<LinePaint>& paints, SkScalar& outMaxLineWidth) const;
         void measureGlyphs(const QVector<LinePaint>& paints, QVector<SkScalar>& outGlyphWidths) const;
         SkPaint getHaloPaint(const SkPaint& paint, const Style& style) const;
+        SkFont getHaloFont(const SkFont& font, const Style& style) const;
         void measureHalo(const Style& style, QVector<LinePaint>& paints) const;
         void measureHaloGlyphs(const Style& style, const QVector<LinePaint>& paints, QVector<SkScalar>& outGlyphWidths) const;
         SkRect positionText(
