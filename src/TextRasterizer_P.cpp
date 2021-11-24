@@ -22,6 +22,172 @@
 #   define OSMAND_LOG_CHARACTERS_FONT 0
 #endif // !defined(OSMAND_LOG_CHARACTERS_FONT)
 
+// TO the separate file
+const double HARFBUZZ_FONT_SIZE_SCALE = 64.0f;
+namespace OsmAnd {
+    void trimspec(std::string& text)
+    {
+        // unicode symbols \u200e \u200f \u202a \u202c \u202b
+        const char *symbols[] = { "\xE2\x80\x8E", "\xE2\x80\x8F", "\xE2\x80\xAA", "\xE2\x80\xAC", "\xE2\x80\xAB"};
+        int length = text.length();
+        for (auto t : symbols) {
+            if (length >= 3 && t[0] == text.at(0) && t[1] == text.at(1) && t[2] == text.at(2)) {
+                text.erase(0, 3);
+                length = text.length();
+            }
+            if (length >= 3 && t[0] == text.at(length - 3) && t[1] == text.at(length - 2) && t[2] == text.at(length - 1)) {
+                text.erase(length - 3);
+                length = text.length();
+            }
+            if (length < 3) {
+                return;
+            }
+        }
+    }
+
+    // Check if all of the specified text has a corresponding non-zero glyph ID
+    bool containsText(const SkTypeface* typeface, const std::string& textString) {
+        const char *text = textString.c_str();
+        size_t byteLength = textString.length();
+        const char *stop = text + byteLength;
+        while (text < stop) {
+            if (0 == typeface->unicharToGlyph(SkUTF8_NextUnichar(&text))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    void FontRegistry::registerFonts(const char* pathToFont,
+                                     const std::string& fontName,
+                                     bool bold/* = false*/,
+                                     bool italic/* = false*/)
+    {
+        OsmAnd::LogPrintf(OsmAnd::LogSeverityLevel::Info, "Font path %s index %d", pathToFont, index);
+        auto entry = new FontEntry(pathToFont, index);
+        index++;
+        if (!entry->fSkiaTypeface)
+        {
+            return;
+        }
+        entry->bold = bold;
+        entry->italic = italic;
+        entry->fontName = fontName;	
+        cache.push_back(entry);
+    }
+
+
+    FontEntry* FontRegistry::updateFontEntry(const std::string& text, bool bold/* = false*/, bool italic/* = false*/) {
+        if (cache.size() == 0)
+        {
+            OsmAnd::LogPrintf(OsmAnd::LogSeverityLevel::Error, "Fonts are not registered. Set fonts by FontRegistry::registerFonts");
+            return nullptr;
+        }
+        FontEntry* fontEntry = nullptr;
+        for (const auto& cacheItem : cache)
+        {
+            if (fontEntry != nullptr && (bold != cacheItem->bold || italic != cacheItem->italic)) {
+                continue;
+            }
+            if (!containsText(cacheItem->fSkiaTypeface.get(), text)) {
+                continue;
+            }
+            fontEntry = cacheItem;
+            // If this entry fully matches the request, stop search
+            if (cacheItem->bold == bold && cacheItem->italic == italic) {
+                break;
+            }
+        }
+
+        if (fontEntry == nullptr) {
+            fontEntry = cache[0];
+        }
+        return fontEntry;
+    }
+
+    void FontRegistry::drawHbText(SkCanvas* cv,
+                                  std::string textS,
+                                  const FontEntry* fontEntry,
+                                  const SkPaint& paint,
+                                  SkFont& font,
+                                  float centerX,
+                                  float centerY)
+    {
+        font.setTypeface(fontEntry->fSkiaTypeface);
+        trimspec(textS);
+        const char *text = textS.c_str();
+        
+        hb_font_t *hb_font = hb_font_create(fontEntry->fHarfBuzzFace.get());
+        hb_font_set_scale(hb_font,
+                        HARFBUZZ_FONT_SIZE_SCALE * font.getSize(),
+                        HARFBUZZ_FONT_SIZE_SCALE * font.getSize());
+        hb_ot_font_set_funcs(hb_font);
+
+        hb_buffer_t *hb_buffer = hb_buffer_create();
+        hb_buffer_add_utf8(hb_buffer, text, -1, 0, -1);
+        hb_buffer_guess_segment_properties(hb_buffer);
+
+        hb_shape(hb_font, hb_buffer, NULL, 0);
+
+        unsigned int length = hb_buffer_get_length(hb_buffer);
+        if (length == 0) {
+            return;
+        }	
+        hb_glyph_info_t *info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
+        hb_glyph_position_t *pos = hb_buffer_get_glyph_positions(hb_buffer, NULL);
+
+        // SkTextBlobBuilder textBlobBuilder;
+        // auto runBuffer = textBlobBuilder.allocRunPos(font, SkToInt(length));
+
+        // double x = 0;
+        // double y = 0;
+        // for (unsigned int i = 0; i < length; i++)
+        // {
+        //     if (fontEntry->delCodePoints.count(info[i].codepoint))
+        //     {
+        //         runBuffer.glyphs[i] = fontEntry->repCodePoint;
+        //     } else {
+        //         runBuffer.glyphs[i] = info[i].codepoint;
+        //     }
+        //     reinterpret_cast<SkPoint *>(runBuffer.pos)[i] =
+        //         SkPoint::Make(SkDoubleToScalar(x + pos[i].x_offset / HARFBUZZ_FONT_SIZE_SCALE),
+        //                     SkDoubleToScalar(y - pos[i].y_offset / HARFBUZZ_FONT_SIZE_SCALE));
+        //     x += pos[i].x_advance / HARFBUZZ_FONT_SIZE_SCALE;
+        //     y += pos[i].y_advance / HARFBUZZ_FONT_SIZE_SCALE;
+        // }
+        // cv->drawTextBlob(textBlobBuilder.make(), centerX - x/2, centerY, paint);
+        cv->drawSimpleText(text, textS.length(), SkTextEncoding::kUTF8, centerX, centerY, font, paint);	
+        
+        hb_buffer_destroy(hb_buffer);
+        hb_font_destroy(hb_font);
+    }
+    void FontRegistry::drawHbTextOnPath(SkCanvas* canvas,
+                                        std::string textS,
+                                        const SkPath& path,
+                                        const FontEntry* fontEntry, 
+                                        const SkFont& font,
+                                        const SkPaint& paint,
+                                        float h_offset,
+                                        float v_offset)
+    {
+
+    }
+
+    void FontRegistry::drawSkiaTextOnPath(SkCanvas* canvas,
+                                         std::string textS,
+                                         const SkPath& path, 
+                                         const FontEntry* fontEntry,
+                                         const SkFont& font,
+                                         const SkPaint& paint,
+                                         float h_offset, 
+                                         float v_offset)
+    {
+
+    }
+}
+OsmAnd::FontRegistry gFontRegistry;
+////////////////////////////////////////////////////////////////////////////////////
+
 OsmAnd::TextRasterizer_P::TextRasterizer_P(TextRasterizer* const owner_)
     : owner(owner_)
 {
@@ -569,33 +735,49 @@ bool OsmAnd::TextRasterizer_P::rasterize(
         );
     }
 
+    auto stdText = text.toUtf8().constData();
+    auto fontEntry = gFontRegistry.updateFontEntry(stdText);
     // Rasterize text halo first (if enabled)
     if (style.haloRadius > 0)
     {
         for (const auto& linePaint : paints)
         {
-            for (const auto& textPaint : linePaint.textPaints)
+            for (auto& textPaint : linePaint.textPaints)
             {
-                const auto haloPaint = getHaloPaint(textPaint.paint, style);
-                const auto haloFont = getHaloFont(textPaint.font, style);
+                auto haloPaint = getHaloPaint(textPaint.paint, style);
+                auto haloFont = getHaloFont(textPaint.font, style);
 
-                canvas.drawSimpleText(
-                    textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
-                    textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
-                    haloFont, haloPaint);
+                // canvas.drawSimpleText(
+                //     textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
+                //     textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
+                //     haloFont, haloPaint);
+                gFontRegistry.drawHbText(&canvas,
+                                         stdText,
+                                         fontEntry,
+                                         haloPaint,
+                                         haloFont,
+                                         textPaint.positionedBounds.left(),
+                                         textPaint.positionedBounds.top());
             }
         }
     }
 
     // Rasterize text itself
-    for (const auto& linePaint : paints)
+    for (auto& linePaint : paints)
     {
-        for (const auto& textPaint : linePaint.textPaints)
+        for (auto& textPaint : linePaint.textPaints)
         {
-            canvas.drawSimpleText(
-                textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
-                textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
-                textPaint.font, textPaint.paint);
+            // canvas.drawSimpleText(
+            //     textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
+            //     textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
+            //     textPaint.font, textPaint.paint);
+            gFontRegistry.drawHbText(&canvas,
+                                     stdText,
+                                     fontEntry,
+                                     textPaint.paint,
+                                     textPaint.font,
+                                     textPaint.positionedBounds.left(),
+                                     textPaint.positionedBounds.top());
         }
     }
 

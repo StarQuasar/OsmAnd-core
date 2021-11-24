@@ -20,6 +20,12 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -fvisibility=hidden -fvisibility-inlines-hidden"
 
 set(used_arch_specific_sources FALSE)
 
+# harfbuzz
+#set(HB_HAVE_ICU ON)
+set(HB_BUILD_UTILS ON)
+add_subdirectory("upstream.patched/third_party/externals/harfbuzz/")
+# harfbuzz
+
 #set(target_specific_sources__none
 #	"upstream.patched/src/opts/SkBitmapProcState_opts_none.cpp"
 #	"upstream.patched/src/opts/SkBlitMask_opts_none.cpp"
@@ -742,6 +748,7 @@ elseif (CMAKE_TARGET_OS STREQUAL "linux")
 		"upstream.patched/include/utils"
 		"upstream.patched/third_party/externals/freetype/devel"
 		"upstream.patched/third_party/externals/freetype/include"
+		"upstream.patched/third_party/externals/harfbuzz/src"
 		# "upstream.patched/externals/freetype/include"
 		# "upstream.patched/externals/freetype/src"
 		${FREETYPE_INCLUDE_DIRS}
@@ -915,6 +922,7 @@ target_link_libraries(skia_static
 		png_static
 		gif_static
 		jpeg_static
+		harfbuzz
 		${target_specific_libraries_public}
 )
 

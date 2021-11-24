@@ -21,8 +21,130 @@
 #include "MapCommonTypes.h"
 #include "TextRasterizer.h"
 
+// To the separate file
+#include <hb-ot.h>
+#include <set>
+
+#include <SkData.h>
+// To the separate file
 namespace OsmAnd
 {
+    // To the separate file
+    using namespace std;
+
+    void trimspec(std::string& text);
+    struct FontEntry {
+        bool bold;
+        bool italic;
+        struct HBFDel { void operator()(hb_face_t *f) { hb_face_destroy(f); }};
+        sk_sp<SkTypeface> fSkiaTypeface = nullptr;
+        std::unique_ptr<hb_face_t, HBFDel> fHarfBuzzFace;
+        string fontName;
+        string pathToFont;
+
+        std::set<uint32_t> delCodePoints;//calculated deleting codepoint for current ttf
+        uint32_t repCodePoint;//calculated replacement codepoint for current ttf
+        
+        //\xE2\x80\x8B (\u200b) ZERO WIDTH SPACE - used for replacement, must be always in 0 index!
+        //\x41 - character A just use as divider
+        //\xE2\x80\x8C (\u200c) ZERO WIDTH NON-JOINER for avoid create ligature in arabic text
+        const char *repChars = "\xE2\x80\x8B\x41\xE2\x80\x8C";//just add code to the end with \x41 divider
+
+        FontEntry(const char *path, int index) {
+            pathToFont = path;
+            // fairly portable mmap impl
+            auto data = SkData::MakeFromFileName(path);
+            assert(data);
+            if (!data) {
+                return;
+            }
+            fSkiaTypeface = SkTypeface::MakeFromFile(path);
+            assert(fSkiaTypeface);
+            if (!fSkiaTypeface) {
+                return;
+            }
+            auto destroy = [](void *d) { static_cast<SkData *>(d)->unref(); };
+            const char *bytes = (const char *)data->data();
+            unsigned int size = (unsigned int)data->size();
+            hb_blob_t *blob = hb_blob_create(bytes,
+                                            size,
+                                            HB_MEMORY_MODE_READONLY,
+                                            data.release(),
+                                            destroy);
+            assert(blob);
+            hb_blob_make_immutable(blob);
+            hb_face_t *face = hb_face_create(blob, (unsigned)index);
+            hb_blob_destroy(blob);
+            assert(face);
+            if (!face) {
+                fSkiaTypeface.reset();
+                return;
+            }
+            hb_face_set_index(face, (unsigned)index);
+            hb_face_set_upem(face, fSkiaTypeface->getUnitsPerEm());
+            fHarfBuzzFace.reset(face);
+
+            //here calculating replacement symbols
+            hb_font_t *hb_font = hb_font_create(fHarfBuzzFace.get());
+            hb_ot_font_set_funcs(hb_font);
+            hb_buffer_t *hb_buffer = hb_buffer_create();
+            hb_buffer_add_utf8(hb_buffer, repChars, -1, 0, -1);
+            hb_buffer_guess_segment_properties(hb_buffer);
+            hb_shape(hb_font, hb_buffer, NULL, 0);
+            unsigned int length = hb_buffer_get_length(hb_buffer);
+            hb_glyph_info_t *info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
+            for (int i = 0; i < length; i++) {
+                if (i == 0) {
+                    repCodePoint = info[i].codepoint;
+                } else if (i == 1) {
+                    continue;
+                } else {
+                    delCodePoints.insert(info[i].codepoint);
+                }
+            }
+            hb_buffer_destroy(hb_buffer);
+            hb_font_destroy(hb_font);
+        }
+    };
+
+    class FontRegistry {
+        std::vector<FontEntry*> cache;
+
+    public:
+        int index = 0;
+        void registerFonts(const char* pathToFont,
+                           const std::string& fontName,
+                           bool bold = false,
+                           bool italic = false);
+        FontEntry*  updateFontEntry(const std::string& text, bool bold = false, bool italic = false);
+        void drawHbText(SkCanvas* cv,
+                        std::string textS,
+                        const FontEntry* fontEntry,
+                        const SkPaint& paint,
+                        SkFont& font,
+                        float centerX,
+                        float centerY);
+        void drawHbTextOnPath(SkCanvas* canvas,
+                              std::string textS,
+                              const SkPath& path,
+                              const FontEntry* fontEntry, 
+                              const SkFont& font,
+                              const SkPaint& paint,
+                              float h_offset,
+                              float v_offset);
+        void drawSkiaTextOnPath(SkCanvas* canvas,
+                                std::string textS,
+                                const SkPath& path, 
+                                const FontEntry* fontEntry,
+                                const SkFont& font,
+                                const SkPaint& paint,
+                                float h_offset, 
+                                float v_offset);
+    };
+
+    extern FontRegistry gFontRegistry;
+    //
+
     class BinaryMapObject;
     class IQueryController;
 
@@ -63,8 +185,8 @@ namespace OsmAnd
                 , minFontTop(std::numeric_limits<SkScalar>::max())
                 , maxFontBottom(0)
                 , minFontBottom(std::numeric_limits<SkScalar>::max())
-                , maxBoundsTop(0)
                 , fontAscent(0)
+                , maxBoundsTop(0)
                 , minBoundsTop(std::numeric_limits<SkScalar>::max())
                 , width(0)
             {
