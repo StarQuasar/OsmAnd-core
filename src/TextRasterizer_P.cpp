@@ -428,6 +428,23 @@ sk_sp<SkImage> OsmAnd::TextRasterizer_P::rasterize(
     return target.asImage();
 }
 
+void OsmAnd::TextRasterizer_P::drawText(SkCanvas& canvas,
+                                        const TextPaint& textPaint,
+                                        const SkFont& font,
+                                        const SkPaint& paint) const
+{
+#ifndef OSMAND_USE_HARFBUZZ
+    canvas.drawSimpleText(
+        textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
+        textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
+        font, paint);
+#else
+    // ToDo
+    sk_sp<SkTextBlob> txtBlob = nullptr;  // SkTextBlob::MakeFromRSXform(, );
+    canvas.drawTextBlob(txtBlob, textPaint.positionedBounds.left(), textPaint.positionedBounds.top(), paint);
+#endif  // OSMAND_USE_HARFBUZZ
+}
+
 bool OsmAnd::TextRasterizer_P::rasterize(
     SkBitmap& targetBitmap,
     const QString& text_,
@@ -591,10 +608,7 @@ bool OsmAnd::TextRasterizer_P::rasterize(
     {
         for (const auto& textPaint : linePaint.textPaints)
         {
-            canvas.drawSimpleText(
-                textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
-                textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
-                textPaint.font, textPaint.paint);
+            drawText(canvas, textPaint, textPaint.font, textPaint.paint);
         }
     }
 
