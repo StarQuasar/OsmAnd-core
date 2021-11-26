@@ -51,6 +51,7 @@ namespace OsmAnd
             SkScalar width;
             SkRect bounds;
             SkRect positionedBounds;
+            std::shared_ptr<hb_face_t> hbFace;
         };
         struct LinePaint
         {
@@ -63,8 +64,8 @@ namespace OsmAnd
                 , minFontTop(std::numeric_limits<SkScalar>::max())
                 , maxFontBottom(0)
                 , minFontBottom(std::numeric_limits<SkScalar>::max())
-                , maxBoundsTop(0)
                 , fontAscent(0)
+                , maxBoundsTop(0)
                 , minBoundsTop(std::numeric_limits<SkScalar>::max())
                 , width(0)
             {

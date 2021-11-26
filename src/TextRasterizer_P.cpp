@@ -5,11 +5,13 @@
 #include <SkBitmap.h>
 #include <SkImage.h>
 #include <SkTypeface.h>
+#include <SkTextBlob.h>
 #include <SkUtils.h>
 #include <SkFontMetrics.h>
 #include "restore_internal_warnings.h"
 
 #include "ICU.h"
+#include <hb-ot.h>
 #include "CoreResourcesEmbeddedBundle.h"
 
 //#define OSMAND_LOG_CHARACTERS_WITHOUT_GLYPHS 1
@@ -21,6 +23,26 @@
 #ifndef OSMAND_LOG_CHARACTERS_TYPEFACE
 #   define OSMAND_LOG_CHARACTERS_TYPEFACE 0
 #endif // !defined(OSMAND_LOG_CHARACTERS_TYPEFACE)
+const double HARFBUZZ_FONT_SIZE_SCALE = 64.0f;
+
+static void trimspec(std::string &text) {
+	// unicode symbols \u200e \u200f \u202a \u202c \u202b
+	const char *symbols[] = { "\xE2\x80\x8E", "\xE2\x80\x8F", "\xE2\x80\xAA", "\xE2\x80\xAC", "\xE2\x80\xAB"};
+	int length = text.length();
+	for (auto t : symbols) {
+		if (length >= 3 && t[0] == text.at(0) && t[1] == text.at(1) && t[2] == text.at(2)) {
+			text.erase(0, 3);
+			length = text.length();
+		}
+		if (length >= 3 && t[0] == text.at(length - 3) && t[1] == text.at(length - 2) && t[2] == text.at(length - 1)) {
+			text.erase(length - 3);
+			length = text.length();
+		}
+		if (length < 3) {
+			return;
+		}
+	}
+}
 
 OsmAnd::TextRasterizer_P::TextRasterizer_P(TextRasterizer* const owner_)
     : owner(owner_)
@@ -99,7 +121,7 @@ QVector<OsmAnd::TextRasterizer_P::LinePaint> OsmAnd::TextRasterizer_P::evaluateP
                         "UCS4 character 0x%08x (%u) has not been found in any typeface",
                         characterUCS4,
                         characterUCS4);
-                }
+                
 #endif // OSMAND_LOG_CHARACTERS_WITHOUT_GLYPHS
 
 #if OSMAND_LOG_CHARACTERS_TYPEFACE
@@ -138,6 +160,52 @@ QVector<OsmAnd::TextRasterizer_P::LinePaint> OsmAnd::TextRasterizer_P::evaluateP
                 linePaint.maxFontBottom = qMax(linePaint.maxFontBottom, metrics.fBottom);
                 linePaint.minFontBottom = qMin(linePaint.minFontBottom, metrics.fBottom);
                 linePaint.fontAscent = metrics.fAscent;
+                //HB
+                pTextPaint->hbFace = typeface->hbTypeface;
+                // trimspec(textS);
+                // const char* text = textS.c_str();
+                
+                // hb_font_t* hb_font = hb_font_create(typeface->hbTypeface.get());
+                // hb_font_set_scale(hb_font,
+                //                   HARFBUZZ_FONT_SIZE_SCALE * font.getSize(),
+                //                   HARFBUZZ_FONT_SIZE_SCALE * font.getSize());
+                // hb_ot_font_set_funcs(hb_font);
+
+                // hb_buffer_t *hb_buffer = hb_buffer_create();
+                // hb_buffer_add_utf8(hb_buffer, text, -1, 0, -1);
+                // hb_buffer_guess_segment_properties(hb_buffer);
+
+                // hb_shape(hb_font, hb_buffer, NULL, 0);
+
+                // unsigned int length = hb_buffer_get_length(hb_buffer);
+                // if (length == 0) {
+                //     return;
+                // }	
+                // hb_glyph_info_t* info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
+                // hb_glyph_position_t* pos = hb_buffer_get_glyph_positions(hb_buffer, NULL);
+
+                // SkTextBlobBuilder textBlobBuilder;
+                // auto runBuffer = textBlobBuilder.allocRunPos(font, SkToInt(length));
+
+                // double x = 0;
+                // double y = 0;
+                // for (unsigned int i =pTextPaint->hbT 0; i < length; i++) {
+                //     if (face->delCodePoints.count(info[i].codepoint)) {
+                //         runBuffer.glyphs[i] = face->repCodePoint;
+                //     } else {
+                //         runBuffer.glyphs[i] = info[i].codepoint;
+                //     }
+                //     reinterpret_cast<SkPoint *>(runBuffer.pos)[i] =
+                //         SkPoint::Make(SkDoubleToScalar(x + pos[i].x_offset / HARFBUZZ_FONT_SIZE_SCALE),
+                //                     SkDoubleToScalar(y - pos[i].y_offset / HARFBUZZ_FONT_SIZE_SCALE));
+                //     x += pos[i].x_advance / HARFBUZZ_FONT_SIZE_SCALE;
+                //     y += pos[i].y_advance / HARFBUZZ_FONT_SIZE_SCALE;
+                // }
+                // xtBlob = sk_sp<SkTextBlob>(textBlobBuilder.make());
+                // // centerX - x/2
+                // hb_buffer_destroy(hb_buffer);
+                // hb_font_destroy(hb_font);
+                //HB
 
                 if (style.bold && (!typeface || (typeface && typeface->skTypeface->fontStyle().weight() <= SkFontStyle::kNormal_Weight)))
                     pTextPaint->font.setEmbolden(true);
@@ -440,8 +508,53 @@ void OsmAnd::TextRasterizer_P::drawText(SkCanvas& canvas,
         font, paint);
 #else
     // ToDo
-    sk_sp<SkTextBlob> txtBlob = nullptr;  // SkTextBlob::MakeFromRSXform(, );
-    canvas.drawTextBlob(txtBlob, textPaint.positionedBounds.left(), textPaint.positionedBounds.top(), paint);
+    std::string textS = textPaint.text.toUtf8().constData();
+    trimspec(textS);
+    const char* text = textS.c_str();
+    
+    hb_font_t* hb_font = hb_font_create(textPaint.hbFace.get());
+    hb_font_set_scale(hb_font,
+                        HARFBUZZ_FONT_SIZE_SCALE * font.getSize(),
+                        HARFBUZZ_FONT_SIZE_SCALE * font.getSize());
+    hb_ot_font_set_funcs(hb_font);
+
+    hb_buffer_t *hb_buffer = hb_buffer_create();
+    hb_buffer_add_utf8(hb_buffer, text, -1, 0, -1);
+    hb_buffer_guess_segment_properties(hb_buffer);
+
+    hb_shape(hb_font, hb_buffer, NULL, 0);
+
+    unsigned int length = hb_buffer_get_length(hb_buffer);
+    if (length == 0) {
+        return;
+    }	
+    hb_glyph_info_t* info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
+    hb_glyph_position_t* pos = hb_buffer_get_glyph_positions(hb_buffer, NULL);
+
+    SkTextBlobBuilder textBlobBuilder;
+    auto runBuffer = textBlobBuilder.allocRunPos(font, SkToInt(length));
+
+    double x = 0;
+    double y = 0;
+    for (unsigned int i = 0; i < length; i++) {
+        // if (face->delCodePoints.count(info[i].codepoint)) {
+        //     runBuffer.glyphs[i] = face->repCodePoint;
+        // } else
+        {
+            runBuffer.glyphs[i] = info[i].codepoint;
+        }
+        reinterpret_cast<SkPoint *>(runBuffer.pos)[i] =
+            SkPoint::Make(SkDoubleToScalar(x + pos[i].x_offset / HARFBUZZ_FONT_SIZE_SCALE),
+                        SkDoubleToScalar(y - pos[i].y_offset / HARFBUZZ_FONT_SIZE_SCALE));
+        x += pos[i].x_advance / HARFBUZZ_FONT_SIZE_SCALE;
+        y += pos[i].y_advance / HARFBUZZ_FONT_SIZE_SCALE;
+    }
+//    pTextPaint->hbTxtBlob = sk_sp<SkTextBlob>(textBlobBuilder.make());
+    // centerX - x/2
+    canvas.drawTextBlob(textBlobBuilder.make(), textPaint.positionedBounds.left(), textPaint.positionedBounds.top(), paint);
+
+    hb_buffer_destroy(hb_buffer);
+    hb_font_destroy(hb_font);
 #endif  // OSMAND_USE_HARFBUZZ
 }
 
