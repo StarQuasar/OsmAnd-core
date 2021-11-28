@@ -189,7 +189,7 @@ std::shared_ptr<OsmAnd::MapMarker::SymbolsGroup> OsmAnd::MapMarker_P::inflateSym
 {
     QReadLocker scopedLocker(&_lock);
 
-    bool ok;
+    //bool ok;
 
     auto& mapSymbolIntersectionClassesRegistry = MapSymbolIntersectionClassesRegistry::globalInstance();
 
@@ -294,11 +294,11 @@ std::shared_ptr<OsmAnd::MapMarker::SymbolsGroup> OsmAnd::MapMarker_P::inflateSym
         
         onMapSurfaceIconSymbol->image = onMapSurfaceIcon;
         onMapSurfaceIconSymbol->size = PointI(onMapSurfaceIcon->width(), onMapSurfaceIcon->height());
-        onMapSurfaceIconSymbol->content = QString().sprintf(
-            "markerGroup(%p:%p)->onMapSurfaceIcon:%p",
-            this,
-            symbolsGroup.get(),
-            onMapSurfaceIcon.get());
+        onMapSurfaceIconSymbol->content = QObject::tr(
+            "markerGroup(0x%1:0x%2)->onMapSurfaceIcon:0x%3")
+            .arg((quintptr)this, QT_POINTER_SIZE * 2, 16, QChar('0'))
+            .arg((quintptr)symbolsGroup.get(), QT_POINTER_SIZE * 2, 16, QChar('0'))
+            .arg((quintptr)onMapSurfaceIcon.get(), QT_POINTER_SIZE * 2, 16, QChar('0'));
         onMapSurfaceIconSymbol->languageId = LanguageId::Invariant;
         onMapSurfaceIconSymbol->position31 = _position;
         onMapSurfaceIconSymbol->direction = direction;

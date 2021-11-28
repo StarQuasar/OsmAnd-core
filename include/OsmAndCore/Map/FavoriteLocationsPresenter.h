@@ -49,7 +49,7 @@ namespace OsmAnd
         static MapMarker::PinIconVerticalAlignment getDefaultFavoriteLocationPinIconVerticalAlignment();
         static MapMarker::PinIconHorisontalAlignment getDefaultFavoriteLocationPinIconHorisontalAlignment();
 
-        virtual QList<IMapKeyedSymbolsProvider::Key> getProvidedDataKeys() const;
+        virtual QList<IMapKeyedSymbolsProvider::Key> getProvidedDataKeys() const Q_DECL_OVERRIDE;
 
         virtual bool supportsNaturalObtainData() const Q_DECL_OVERRIDE;
         virtual bool obtainData(
