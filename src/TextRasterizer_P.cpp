@@ -483,7 +483,8 @@ void OsmAnd::TextRasterizer_P::drawText(SkCanvas& canvas,
 
     //  draw glyphs
     unsigned int length = hb_buffer_get_length(hb_buffer);
-    if (length == 0) {
+    if (length == 0)
+    {
         return;
     }	
     hb_glyph_info_t* info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
@@ -495,10 +496,10 @@ void OsmAnd::TextRasterizer_P::drawText(SkCanvas& canvas,
     double x = 0;
     double y = 0;
     for (unsigned int i = 0; i < length; i++) {
-        if (textPaint.faceData->delCodePoints.count(info[i].codepoint)) {
-            runBuffer.glyphs[i] = textPaint.faceData->repCodePoint;
-        } else
+        if (textPaint.faceData->delCodePoints.count(info[i].codepoint))
         {
+            runBuffer.glyphs[i] = textPaint.faceData->repCodePoint;
+        } else {
             runBuffer.glyphs[i] = info[i].codepoint;
         }
         reinterpret_cast<SkPoint *>(runBuffer.pos)[i] =
@@ -664,10 +665,11 @@ bool OsmAnd::TextRasterizer_P::rasterize(
                 const auto haloPaint = getHaloPaint(textPaint.paint, style);
                 const auto haloFont = getHaloFont(textPaint.font, style);
 
-                canvas.drawSimpleText(
-                    textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
-                    textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
-                    haloFont, haloPaint);
+                // canvas.drawSimpleText(
+                //     textPaint.text.constData(), textPaint.text.length()*sizeof(QChar), SkTextEncoding::kUTF16,
+                //     textPaint.positionedBounds.left(), textPaint.positionedBounds.top(),
+                //     haloFont, haloPaint);
+                drawText(canvas, textPaint, haloFont, haloPaint);
             }
         }
     }
