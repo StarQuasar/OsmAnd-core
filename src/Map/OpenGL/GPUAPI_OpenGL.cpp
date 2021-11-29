@@ -839,6 +839,10 @@ bool OsmAnd::GPUAPI_OpenGL::releaseResourceInGPU(const ResourceInGPU::Type type,
 
             return true;
         }
+        case ResourceInGPU::Type::SlotOnAtlasTexture:
+        case ResourceInGPU::Type::Mesh:
+        default:
+            break;
     }
 
     return false;

@@ -40,7 +40,7 @@ namespace OsmAnd
             //\xE2\x80\x8B (\u200b) ZERO WIDTH SPACE - used for replacement, must be always in 0 index!
             //\x41 - character A just use as divider
             //\xE2\x80\x8C (\u200c) ZERO WIDTH NON-JOINER for avoid create ligature in arabic text
-            static const char* sRepChars;//just add code to the end with \x41 divider
+            static const char sRepChars[];//just add code to the end with \x41 divider
         };
 
     private:

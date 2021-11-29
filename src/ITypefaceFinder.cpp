@@ -1,7 +1,7 @@
 #include "ITypefaceFinder.h"
 
 
-/*static */const char* OsmAnd::ITypefaceFinder::Typeface::sRepChars = "\xE2\x80\x8B\x41\xE2\x80\x8C";//just add code to the end with \x41 divider
+/*static */const char OsmAnd::ITypefaceFinder::Typeface::sRepChars[] = "\xE2\x80\x8B\x41\xE2\x80\x8C";//just add code to the end with \x41 divider
 
 OsmAnd::ITypefaceFinder::ITypefaceFinder()
 {

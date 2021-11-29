@@ -44,7 +44,8 @@ OsmAnd::EmbeddedTypefaceFinder::EmbeddedTypefaceFinder(
                 new QByteArray(typefaceData),
                 [](void* pUserData) { delete reinterpret_cast<QByteArray*>(pUserData); }),
             [](auto p) { hb_blob_destroy(p); });
-        if (!hbBlob) {
+        if (!hbBlob)
+        {
             LogPrintf(LogSeverityLevel::Error,
                 "Failed to load Harfbuzz blob from embedded data for '%s'",
                 qPrintable(embeddedTypefaceResource));
@@ -52,7 +53,8 @@ OsmAnd::EmbeddedTypefaceFinder::EmbeddedTypefaceFinder(
         }
 
         const auto pHbTypeface = hb_face_create(hbBlob.get(), 0);
-        if (!pHbTypeface || pHbTypeface == hb_face_get_empty()) {
+        if (!pHbTypeface || pHbTypeface == hb_face_get_empty())
+        {
             LogPrintf(LogSeverityLevel::Error,
                 "Failed to create Harfbuzz typeface from embedded data for '%s'",
                 qPrintable(embeddedTypefaceResource));
@@ -70,8 +72,10 @@ OsmAnd::EmbeddedTypefaceFinder::EmbeddedTypefaceFinder(
 		hb_shape(hb_font, hb_buffer, NULL, 0);
 		unsigned int length = hb_buffer_get_length(hb_buffer);
 		hb_glyph_info_t *info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
-		for (int i = 0; i < length; i++) {
-			if (i == 0) {
+		for (size_t i = 0; i < length; ++i)
+        {
+			if (i == 0)
+            {
 				repCodePoint = info[i].codepoint;
 			} else if (i == 1) {
 				continue;

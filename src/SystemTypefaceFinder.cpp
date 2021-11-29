@@ -63,8 +63,10 @@ std::shared_ptr<const OsmAnd::ITypefaceFinder::Typeface> OsmAnd::SystemTypefaceF
     hb_shape(hb_font, hb_buffer, NULL, 0);
     unsigned int length = hb_buffer_get_length(hb_buffer);
     hb_glyph_info_t *info = hb_buffer_get_glyph_infos(hb_buffer, NULL);
-    for (int i = 0; i < length; i++) {
-        if (i == 0) {
+    for (int i = 0; i < length; i++)
+    {
+        if (i == 0)
+        {
             repCodePoint = info[i].codepoint;
         } else if (i == 1) {
             continue;

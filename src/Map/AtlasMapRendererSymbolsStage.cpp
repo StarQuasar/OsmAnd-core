@@ -889,7 +889,7 @@ bool OsmAnd::AtlasMapRendererSymbolsStage::plotBillboardRasterSymbol(
     const auto& internalState = getInternalState();
 
     const auto& symbol = std::static_pointer_cast<const BillboardRasterMapSymbol>(renderable->mapSymbol);
-    const auto& symbolGroupPtr = symbol->groupPtr;
+    // const auto& symbolGroupPtr = symbol->groupPtr;
 
     const auto& offsetOnScreen =
         (renderable->instanceParameters && renderable->instanceParameters->overridesOffset)
@@ -1058,10 +1058,10 @@ bool OsmAnd::AtlasMapRendererSymbolsStage::plotOnSurfaceRasterSymbol(
     ScreenQuadTree& intersections,
     AtlasMapRenderer_Metrics::Metric_renderFrame* const metric) const
 {
-    const auto& internalState = getInternalState();
+    // const auto& internalState = getInternalState();
 
-    const auto& symbol = std::static_pointer_cast<const OnSurfaceRasterMapSymbol>(renderable->mapSymbol);
-    const auto& symbolGroupPtr = symbol->groupPtr;
+    // const auto& symbol = std::static_pointer_cast<const OnSurfaceRasterMapSymbol>(renderable->mapSymbol);
+    // const auto& symbolGroupPtr = symbol->groupPtr;
 
     return true;
 }
@@ -1071,10 +1071,10 @@ bool OsmAnd::AtlasMapRendererSymbolsStage::plotOnSurfaceVectorSymbol(
     ScreenQuadTree& intersections,
     AtlasMapRenderer_Metrics::Metric_renderFrame* const metric) const
 {
-    const auto& internalState = getInternalState();
+    // const auto& internalState = getInternalState();
 
-    const auto& symbol = std::static_pointer_cast<const OnSurfaceVectorMapSymbol>(renderable->mapSymbol);
-    const auto& symbolGroupPtr = symbol->groupPtr;
+    // const auto& symbol = std::static_pointer_cast<const OnSurfaceVectorMapSymbol>(renderable->mapSymbol);
+    // const auto& symbolGroupPtr = symbol->groupPtr;
 
     return true;
 }
@@ -1395,7 +1395,7 @@ bool OsmAnd::AtlasMapRendererSymbolsStage::plotOnPathSymbol(
     const auto& internalState = getInternalState();
 
     const auto& symbol = std::static_pointer_cast<const OnPathRasterMapSymbol>(renderable->mapSymbol);
-    const auto& symbolGroupPtr = symbol->groupPtr;
+    // const auto& symbolGroupPtr = symbol->groupPtr;
 
     // Draw the glyphs
     if (renderable->is2D)

@@ -101,7 +101,7 @@ bool OsmAnd::MapRasterMetricsLayerProvider_P::obtainData(
     textFont.setSize(fontSize);
 
     auto topOffset = fontSize;
-    const auto lines = text.split(QLatin1Char('\n'), QString::SkipEmptyParts);
+    const auto lines = text.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
     for (const auto& line : lines)
     {
         canvas.drawSimpleText(
